@@ -26,62 +26,66 @@ char*
 Util::getRoute (const char* dest) {
   FILE * fd;
   char buff[20];
-	int sock;
-	struct sockaddr_in addr, name;
-	int len;
-	char *dst_addr;
+  int sock;
+  struct sockaddr_in addr, name;
+  int len;
+  // char *dst_addr;
+  const char * dst_addr = dest == NULL ? "216.239.51.100" : dest;
+
   // Ouvre un tube nommé
-	if ((sock = socket(AF_INET, SOCK_DGRAM, 0)) == -1)
-	{
-		perror("socket");
-		return NULL;
-	}
+  if ((sock = socket(AF_INET, SOCK_DGRAM, 0)) == -1)
+  {
+    perror("socket");
+    return NULL;
+  }
 
-	bzero(&addr, sizeof(struct sockaddr_in));
+  bzero(&addr, sizeof(struct sockaddr_in));
 
-	addr.sin_port = htons(1234);
-	/* XXX */
-	if (dest == NULL)
-		dst_addr = "216.239.51.100";
-	else
-		dst_addr = (char *)dest;
-	
-	addr.sin_addr.s_addr = inet_addr(dst_addr);
-	addr.sin_family = AF_INET;
-	
-	if (connect(sock, (struct sockaddr *)&addr, sizeof(struct sockaddr)) == -1)
-	{
-		perror("connect");
-		return NULL;
-	}
-	
-	len = sizeof(struct sockaddr);
-	if (getsockname(sock, (struct sockaddr *)&name, (socklen_t *)&len) == -1)
-	{
-		perror("getsockname");
-		return NULL;
-	}
-	
-	//printf("%s\n", inet_ntoa(name.sin_addr));
-	
-	close(sock);
+  addr.sin_port = htons(1234);
+  /* XXX */
+    /*
+  if (dest == NULL)
+    dst_addr = "216.239.51.100";
+  else
+    dst_addr = (char *)dest;
+    */
 
-	return strdup(inet_ntoa(name.sin_addr));
+  addr.sin_addr.s_addr = inet_addr(dst_addr);
+  addr.sin_family = AF_INET;
+
+  if (connect(sock, (struct sockaddr *)&addr, sizeof(struct sockaddr)) == -1)
+  {
+    perror("connect");
+    return NULL;
+  }
+
+  len = sizeof(struct sockaddr);
+  if (getsockname(sock, (struct sockaddr *)&name, (socklen_t *)&len) == -1)
+  {
+    perror("getsockname");
+    return NULL;
+  }
+
+  //printf("%s\n", inet_ntoa(name.sin_addr));
+
+  close(sock);
+
+  return strdup(inet_ntoa(name.sin_addr));
 
 #ifdef __APPLE__
   fd = popen(" a=`/usr/sbin/netstat -rn | grep default`; /sbin/ifconfig `echo $a | cut -d ' ' -f 6` | grep \"inet \" | cut -d ' ' -f 2", "r");
 #endif
 
 #ifdef __FreeBSD__
-	fd = popen(" a=`netstat -rn | grep default`; /sbin/ifconfig `echo $a | cut -d ' ' -f 6` | grep \"inet \" | cut -d ' ' -f 2", "r");
+  fd = popen(" a=`netstat -rn | grep default`; /sbin/ifconfig `echo $a | cut -d ' ' -f 6` | grep \"inet \" | cut -d ' ' -f 2", "r");
 
 #endif
 
 #ifdef __NetBSD__
-  
+
   fd = popen(" a=`/usr/bin/netstat -rn | grep default`; /sbin/ifconfig `echo $a | cut -d ' ' -f 7` | grep \"inet \" | cut -d ' ' -f 2", "r");
 #endif
-	
+
 #ifdef __linux__
   fd = popen(" a=`/sbin/route -n | grep default`; /sbin/ifconfig `echo $a | cut -d ' ' -f 8` | grep \"inet \" | cut -d ':' -f 2 | cut -d ' ' -f 1", "r");
 #endif
@@ -249,25 +253,25 @@ Util::protocol2int (const char* protocol) {
 
 char*
 Util::my_inet_ntoa(uint32 addr) {
-	struct in_addr host_addr;
- 	host_addr.s_addr         = addr;
+  struct in_addr host_addr;
+   host_addr.s_addr         = addr;
   return inet_ntoa(host_addr);
 }
 
 uint32
 Util::my_inet_aton(char *address) {
-	struct in_addr buff;
+  struct in_addr buff;
   int res = inet_aton(address, &buff);
   if (res == 0)
     throw TrException(str_log(ERROR,
-			"Invalid destination address : %s", address));
-	
-	return buff.s_addr;
+      "Invalid destination address : %s", address));
+
+  return buff.s_addr;
 }
 
 char*
 Util::my_gethostbyname(char* host) {
-	// Parse destination address
+  // Parse destination address
  struct in_addr host_addr;
  int res = inet_aton(host, &host_addr);
  if (res != 0) {
@@ -301,10 +305,10 @@ Util::getHostName (const char* host_address) {
   struct in_addr addr;
   int res = inet_aton(host_address, &addr);
   if (res < 0) throw TrException(str_log(ERROR,
-		    "Cannot convert %s to 'in_addr'", host_address));
+        "Cannot convert %s to 'in_addr'", host_address));
   struct hostent* host = gethostbyaddr((char *)&addr, sizeof(in_addr), AF_INET);
   if (host == NULL) throw TrException(str_log(ERROR,
-	"Error in gethostbyaddr(%s) : %s", host_address, strerror(h_errno)));
+  "Error in gethostbyaddr(%s) : %s", host_address, strerror(h_errno)));
   return strdup(host->h_addr_list[0]);
 }*/
 
@@ -320,7 +324,7 @@ Util::getHostName (const char* host_address) {
 Util::getHostAddress (const char* host_name) {
   struct hostent* host = gethostbyname(host_name);
   if (host != NULL) throw TrException(str_log(ERROR,
-	"Error in gethostbyname(%s) : %s", host_name, strerror(h_errno)));
+  "Error in gethostbyname(%s) : %s", host_name, strerror(h_errno)));
   return strdup(host->h_name);
 }*/
 

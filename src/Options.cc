@@ -79,10 +79,10 @@ Options::Options (int argc, char** argv) {
   };
 #endif
 
-  char* short_opts = "AZhVvQniDf:F:m:p:o:s:d:t:w:T:q:M:a:lb:L:B:c:E:r:";
+  const char* short_opts = "AZhVvQniDf:F:m:p:o:s:d:t:w:T:q:M:a:lb:L:B:c:E:r:";
 
   int opt = 1;
-#ifndef __FreeBSD__  
+#ifndef __FreeBSD__
   while ((opt = getopt_long(argc, argv, short_opts, long_opts, NULL)) != -1) {
 #else
 	while ((opt = getopt(argc, argv, short_opts/*, long_opts, NULL*/)) != -1) {
@@ -116,7 +116,7 @@ Options::Options (int argc, char** argv) {
       case 'p':   // protocol
         log(DUMP, "Option : protocol, param = %s", optarg);
         strncpy(protocol, optarg, 5);
-        
+
         if (strncmp(optarg, "icmp", 4) == 0) {
           protocole = 0x01;
         	proc_id = getpid() + 32768;
@@ -205,7 +205,7 @@ Options::Options (int argc, char** argv) {
      			mline_output = true;
      		break;
      	case 'D':
-     		
+
      		break;
      	case 'E':
      		factor = atoi(optarg);
@@ -224,12 +224,12 @@ Options::Options (int argc, char** argv) {
 	    help();
 	    exit(1);
 	  }
-	
+
 		char *p;
 		if ((p = strchr(argv[optind], '/')) != NULL) {
 			*p = 0x00;
 			detection_type = DEST;
-			
+
 			if (*(p - 1) == '+') {
 				*(p - 1) = 0x00;
 				detection_type = ALL;
@@ -237,7 +237,7 @@ Options::Options (int argc, char** argv) {
 			//per_dest = true;
 			prefix_len = atoi(p+1);
 		}
-	
+
 		dst_addr = Util::my_gethostbyname(argv[optind]);
 		if (dst_addr == NULL)
 			help();
