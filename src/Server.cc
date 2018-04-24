@@ -328,11 +328,20 @@ Server::runThread () {
             // Only ok FOR ICMP, VERY DIRTY QUICK FIX
 			if (client[id] != NULL){
                 if (strcmp(opts->protocol , "icmp") == 0){
-                    ICMPHeader* err_icmp = (ICMPHeader*)reply->getHeader(3);
-                    if (err_icmp->getIdentifier() == opts->proc_id){
-                        client[id]->notifyReply(reply, tv);
-                    } else {
-                        log(DUMP, "Dropping packet from another process...");
+                    ICMPHeader* icmp = (ICMPHeader*)reply->getHeader(1);
+                    if (icmp->getType() == 0x0b || icmp->getType() == 0x03) {
+                        ICMPHeader* err_icmp = (ICMPHeader*)reply->getHeader(3);
+                        if (err_icmp->getIdentifier() == opts->proc_id){
+                            client[id]->notifyReply(reply, tv);
+                        } else {
+                            log(DUMP, "Dropping packet from another process...");
+                        }
+                    } else if (icmp->getType() == 0x00) {
+                        if (icmp->getIdentifier() == opts->proc_id) {
+                            client[id]->notifyReply(reply, tv);
+                        } else {
+                            log(DUMP, "Dropping packet from another process...");
+                        }
                     }
                 } else {
                     client[id]->notifyReply(reply, tv);
