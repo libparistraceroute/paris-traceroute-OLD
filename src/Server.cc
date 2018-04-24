@@ -334,13 +334,13 @@ Server::runThread () {
                         if (err_icmp->getIdentifier() == opts->proc_id){
                             client[id]->notifyReply(reply, tv);
                         } else {
-                            log(DUMP, "Dropping packet from another process...");
+                            log(DUMP, "Dropping packet from another process %d", err_icmp->getIdentifier());
                         }
                     } else if (icmp->getType() == 0x00) {
                         if (icmp->getIdentifier() == opts->proc_id) {
                             client[id]->notifyReply(reply, tv);
                         } else {
-                            log(DUMP, "Dropping packet from another process...");
+                            log(DUMP, "Dropping packet from process %d", icmp->getIdentifier());
                         }
                     }
                 } else {
