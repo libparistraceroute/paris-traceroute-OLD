@@ -346,6 +346,7 @@ IP4Header::dump () {
   log(DUMP, "IP4 header :");
   log(DUMP, "tos                = %d", getToS());
   log(DUMP, "total_length       = %d", getTotalLength());
+  log(DUMP, "ip id              = %d", getIPId());
   log(DUMP, "ttl                = %d", getTTL());
   log(DUMP, "protocol           = %d", getProtocol());
   struct in_addr addr;

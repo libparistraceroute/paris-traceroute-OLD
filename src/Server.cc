@@ -43,32 +43,52 @@ server_run_thread (void* arg) {
  */
 Server::Server (Options* opts, const char* protocol) {
 	int res;
-	
   // Initialisation
   this->client   = new Tracert*[opts->threads_count];
   this->client[0]   = NULL;
   this->client_id =  new int[opts->threads_count];
   this->opts     = opts;
-
   stop_thread    = true;
 
 #ifdef USEPCAP
 	//pcap_t *handle;
 	char *dev;
-	bpf_u_int32 mask;		/* Our netmask */	bpf_u_int32 net;		/* Our IP */
+	bpf_u_int32 mask;		/* Our netmask */
+	bpf_u_int32 net;		/* Our IP */
 	char errbuf[PCAP_ERRBUF_SIZE];	/* Error string */
-	struct bpf_program fp;		/* The compiled filter */	char filter_exp[] = "tcp or icmp";	/* The filter expression */
+	struct bpf_program fp;		/* The compiled filter */
+	char filter_exp[] = "tcp or icmp";	/* The filter expression */
 		
-	/* Define the device */	dev = pcap_lookupdev(errbuf);	if (dev == NULL) {		throw TrException(str_log(ERROR, "Couldn't find default device: %s\n", errbuf));	}	/* Find the properties for the device */	if (pcap_lookupnet(dev, &net, &mask, errbuf) == -1) {		fprintf(stderr, "Couldn't get netmask for device %s: %s\n", dev, errbuf);		net = 0;		mask = 0;	}	handle = pcap_open_live(dev, BUFSIZ, 0, 10, errbuf);	if (handle == NULL) {		throw TrException(str_log(ERROR, "Couldn't open device %s: %s\n", dev, errbuf));
+	/* Define the device */
+	dev = pcap_lookupdev(errbuf);
+	if (dev == NULL) {
+		throw TrException(str_log(ERROR, "Couldn't find default device: %s\n", errbuf));
+	}
+	/* Find the properties for the device */
+	if (pcap_lookupnet(dev, &net, &mask, errbuf) == -1) {
+		fprintf(stderr, "Couldn't get netmask for device %s: %s\n", dev, errbuf);
+		net = 0;
+		mask = 0;
+	}
+
+	handle = pcap_open_live(dev, BUFSIZ, 0, 10, errbuf);
+	if (handle == NULL) {
+		throw TrException(str_log(ERROR, "Couldn't open device %s: %s\n", dev, errbuf));
 	}
 	
 	/* make sure we're capturing on an Ethernet device [2] */
 	if (pcap_datalink(handle) != DLT_EN10MB) {
 		throw TrException(str_log(ERROR, "%s is not an Ethernet\n", dev));
 	}
-		/* Compile and apply the filter */	if (pcap_compile(handle, &fp, filter_exp, 0, net) == -1) {		throw TrException(str_log(ERROR, "Couldn't parse filter %s: %s\n", filter_exp, pcap_geterr(handle)));	}
+	
+	/* Compile and apply the filter */
+	if (pcap_compile(handle, &fp, filter_exp, 0, net) == -1) {
+		throw TrException(str_log(ERROR, "Couldn't parse filter %s: %s\n", filter_exp, pcap_geterr(handle)));
+	}
 
-	if (pcap_setfilter(handle, &fp) == -1) {		throw TrException(str_log(ERROR, "Couldn't install filter %s: %s\n", filter_exp, pcap_geterr(handle)));	}
+	if (pcap_setfilter(handle, &fp) == -1) {
+		throw TrException(str_log(ERROR, "Couldn't install filter %s: %s\n", filter_exp, pcap_geterr(handle)));
+	}
 	
 	pcap_fd = pcap_fileno(handle);
 	if (fcntl(pcap_fd, F_SETFL, O_NONBLOCK) < 0)
@@ -298,12 +318,27 @@ Server::runThread () {
 			
 			if (id < 0 || id >= 32)
 				log(FATAL, "bug, id can't be greater than 31");
-			reply->proc_id = opts->proc_id;
+            reply->proc_id = opts->proc_id;
 			
 			//if (opts->debug)
 			//printf("runthread, locked, notifyrelply %d %x\n", id, client[id]);
 			// DEVANOMALIES: the single client will recive all responses
-			if (client[id] != NULL) client[id]->notifyReply(reply, tv);
+            
+            // In case of parralel paris traceroutes launched, do not take the replies from others.
+            // Only ok FOR ICMP, VERY DIRTY QUICK FIX
+			if (client[id] != NULL){
+                if (strcmp(opts->protocol , "icmp") == 0){
+                    ICMPHeader* err_icmp = (ICMPHeader*)reply->getHeader(3);
+                    if (err_icmp->getIdentifier() == opts->proc_id){
+                        client[id]->notifyReply(reply, tv);
+                    } else {
+                        log(DUMP, "Dropping packet from another process...");
+                    }
+                } else {
+                    client[id]->notifyReply(reply, tv);
+                }
+                    
+            } 
 			//printf("runthread, unlocked notifyreply done\n");
 			delete(reply);
 			

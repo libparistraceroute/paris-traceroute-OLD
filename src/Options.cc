@@ -31,7 +31,7 @@ Options::Options (int argc, char** argv) {
   protocole            = 0x11;
   strcpy(algo, "hopbyhop");
   dst_addr 						 = NULL;
-  src_port             = 33456;
+  src_port             = getpid();
   dst_port             = 33457;
   ttl_initial          = 1;
   ttl_max              = 30;

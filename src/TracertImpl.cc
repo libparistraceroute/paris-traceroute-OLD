@@ -265,7 +265,7 @@ TracertImpl::validateReply(Reply *reply, struct timeval *tv) {
 
 	if (reply->getProcId() != opts->proc_id) {
   //if (reply->getProcId() != opts->src_port) {
-    log(DUMP, "Bad ProcId : %d %d", reply->getProcId(), opts->src_port);
+        log(DUMP, "Bad ProcId : %d %d", reply->getProcId(), opts->src_port);
     
     return NULL;
   }
